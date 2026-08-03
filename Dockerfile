@@ -14,6 +14,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends ffmpeg ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
+# Fail the BUILD immediately (with a clear message) if ffmpeg/ffprobe aren't
+# actually usable, instead of discovering it later at runtime during a
+# download. If this step fails, ffmpeg did not install correctly in this
+# base image.
+RUN ffmpeg -version && ffprobe -version
+
 WORKDIR /app
 
 COPY requirements.txt .
