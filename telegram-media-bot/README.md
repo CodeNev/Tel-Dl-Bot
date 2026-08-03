@@ -191,28 +191,6 @@ to see all messages, not just commands.
 Set `COOKIE_FILE` to a cookies.txt file exported from a logged-in browser
 session you're authorized to use.
 
-**"Sign in to confirm you're not a bot" (YouTube only)**
-YouTube blocks/challenges requests from datacenter IP ranges (Railway, AWS,
-GCP, etc.) and demands cookie authentication, even for public videos. This is
-a YouTube-side anti-bot measure, not a bug in this bot. Fix:
-
-1. Log into YouTube in a normal browser with an account you're comfortable
-   using for this purpose.
-2. Install a cookie-export extension, e.g. **"Get cookies.txt LOCALLY"**
-   (Chrome/Firefox), and export cookies for `youtube.com` in Netscape format.
-3. Since Railway has no file-upload for env vars, paste the *entire contents*
-   of that exported `cookies.txt` file into a `COOKIES_CONTENT` variable in
-   Railway's Variables tab (the Raw Editor / a multi-line text field supports
-   pasting multi-line text directly). The bot writes this to a real
-   `cookies.txt` on disk at startup and uses it automatically.
-4. Redeploy. Rotate/re-export these cookies periodically — YouTube sessions
-   expire, and once they do you'll see this error again until you refresh them.
-
-Alternatively, if you're running the bot on your own machine (not Railway),
-you can instead set `COOKIE_FILE` to a local file path, or let yt-dlp read
-directly from your browser by editing `YTDLPService` to pass
-`cookiesfrombrowser`.
-
 **Downloads fail with a merging/ffmpeg error**
 Confirm you deployed using the provided `Dockerfile` (it installs FFmpeg). If
 running locally, verify `ffmpeg -version` works in your shell, or set

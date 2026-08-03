@@ -89,7 +89,6 @@ class Settings:
     blocked_domains: List[str]
 
     cookie_file: str | None
-    cookies_content: str | None
     proxy_url: str | None
     ffmpeg_path: str
     ytdlp_binary: str
@@ -153,7 +152,6 @@ def load_settings() -> Settings:
         allowed_domains=_get_list("ALLOWED_DOMAINS", "*"),
         blocked_domains=_get_list("BLOCKED_DOMAINS", ""),
         cookie_file=_get("COOKIE_FILE") or None,
-        cookies_content=_get("COOKIES_CONTENT") or None,
         proxy_url=_get("PROXY_URL") or None,
         ffmpeg_path=_get("FFMPEG_PATH", "ffmpeg"),
         ytdlp_binary=_get("YTDLP_BINARY", "yt-dlp"),
@@ -169,31 +167,7 @@ def load_settings() -> Settings:
     if settings.download_timeout < 10:
         raise ConfigError("DOWNLOAD_TIMEOUT must be at least 10 seconds.")
 
-    settings = _materialize_cookie_file(settings)
     return settings
-
-
-def _materialize_cookie_file(settings: "Settings") -> "Settings":
-    """If COOKIES_CONTENT was provided (needed on hosts like Railway where
-    there's no way to upload a file directly), write it to disk as a real
-    Netscape-format cookies file and point cookie_file at it. An explicit
-    COOKIE_FILE path always takes priority if both are set."""
-    if settings.cookie_file:
-        return settings
-    if not settings.cookies_content:
-        return settings
-
-    cookie_path = settings.cache_dir / "cookies.txt"
-    content = settings.cookies_content
-    # Support pasting the content with literal "\n" sequences (common when
-    # copy-pasting a multi-line file into a single-line env var field).
-    if "\\n" in content and "\n" not in content:
-        content = content.replace("\\n", "\n")
-    cookie_path.write_text(content, encoding="utf-8")
-
-    from dataclasses import replace
-
-    return replace(settings, cookie_file=str(cookie_path))
 
 
 def get_settings_or_exit() -> Settings:
