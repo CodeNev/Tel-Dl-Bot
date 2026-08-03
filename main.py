@@ -34,38 +34,24 @@ from bot.utils.logger import get_logger, setup_logging
 
 
 def check_binaries(ffmpeg_path: str, ytdlp_binary: str) -> None:
-    """Fail fast with a clear message if ffmpeg/ffprobe aren't on PATH — a very
-    common deployment mistake when Railway (or another host) doesn't actually
-    build from the provided Dockerfile."""
-    import sys
-
+    """Warn (but don't crash the whole bot) if ffmpeg/ffprobe aren't found on
+    PATH. Downloads that need merging will still fail with a clear per-request
+    error, but a detection edge-case here should never take the entire bot
+    offline."""
     missing = []
     if shutil.which(ffmpeg_path) is None:
         missing.append(ffmpeg_path)
 
-    # ffprobe normally ships alongside ffmpeg in the same directory; derive
-    # its expected name/path from FFMPEG_PATH so a custom FFMPEG_PATH is
-    # still checked correctly.
     ffprobe_path = ffmpeg_path.replace("ffmpeg", "ffprobe") if "ffmpeg" in ffmpeg_path else "ffprobe"
     if shutil.which(ffprobe_path) is None:
         missing.append(ffprobe_path)
 
     if missing:
-        print("=" * 70, file=sys.stderr)
-        print("STARTUP ERROR: required binaries not found on PATH:", ", ".join(missing), file=sys.stderr)
         print(
-            "This almost always means the container was NOT built from the "
-            "provided Dockerfile (e.g. Railway's builder fell back to Nixpacks, "
-            "or a cached/stale image is being used).",
-            file=sys.stderr,
+            "WARNING: could not find on PATH: " + ", ".join(missing) + ". "
+            "Video/audio merging will fail until this is fixed. Make sure you're "
+            "deploying with the provided Dockerfile, which installs ffmpeg."
         )
-        print(
-            "Fix: in Railway, open Settings -> Build, confirm Builder = 'Dockerfile', "
-            "then trigger a fresh deploy (Redeploy) so the image is rebuilt from scratch.",
-            file=sys.stderr,
-        )
-        print("=" * 70, file=sys.stderr)
-        sys.exit(1)
 
 
 async def post_init(application: Application) -> None:
@@ -94,6 +80,7 @@ def build_application() -> Application:
         ytdlp_binary=settings.ytdlp_binary,
         proxy_url=settings.proxy_url,
         cookie_file=settings.cookie_file,
+        player_clients=settings.player_clients,
     )
     queue = DownloadQueueManager(settings.max_concurrent_downloads, settings.max_queue_size)
     sessions = SessionStore()

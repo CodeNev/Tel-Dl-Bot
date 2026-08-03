@@ -91,11 +91,19 @@ FRIENDLY_ERRORS = {
 
 
 class YTDLPService:
-    def __init__(self, ffmpeg_path: str, ytdlp_binary: str, proxy_url: str | None, cookie_file: str | None):
+    def __init__(
+        self,
+        ffmpeg_path: str,
+        ytdlp_binary: str,
+        proxy_url: str | None,
+        cookie_file: str | None,
+        player_clients: list[str] | None = None,
+    ):
         self.ffmpeg_path = ffmpeg_path
         self.ytdlp_binary = ytdlp_binary
         self.proxy_url = proxy_url
         self.cookie_file = cookie_file
+        self.player_clients = player_clients or []
 
     def _base_opts(self) -> dict:
         opts: dict[str, Any] = {
@@ -110,6 +118,8 @@ class YTDLPService:
             opts["proxy"] = self.proxy_url
         if self.cookie_file:
             opts["cookiefile"] = self.cookie_file
+        if self.player_clients:
+            opts["extractor_args"] = {"youtube": {"player_client": self.player_clients}}
         return opts
 
     async def extract_info(self, url: str) -> MediaInfo:
@@ -252,6 +262,8 @@ class YTDLPService:
             opts["proxy"] = self.proxy_url
         if self.cookie_file:
             opts["cookiefile"] = self.cookie_file
+        if self.player_clients:
+            opts["extractor_args"] = {"youtube": {"player_client": self.player_clients}}
         if progress_hook:
             opts["progress_hooks"] = [progress_hook]
 

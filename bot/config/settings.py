@@ -93,6 +93,7 @@ class Settings:
     proxy_url: str | None
     ffmpeg_path: str
     ytdlp_binary: str
+    player_clients: List[str] = field(default_factory=list)
 
     telegram_api_id: str | None = None
     telegram_api_hash: str | None = None
@@ -157,6 +158,7 @@ def load_settings() -> Settings:
         proxy_url=_get("PROXY_URL") or None,
         ffmpeg_path=_get("FFMPEG_PATH", "ffmpeg"),
         ytdlp_binary=_get("YTDLP_BINARY", "yt-dlp"),
+        player_clients=_get_list("YTDLP_PLAYER_CLIENTS", "android,web"),
         telegram_api_id=_get("TELEGRAM_API_ID") or None,
         telegram_api_hash=_get("TELEGRAM_API_HASH") or None,
         db_path=cache_dir / "bot.sqlite3",
@@ -189,7 +191,12 @@ def _materialize_cookie_file(settings: "Settings") -> "Settings":
     # copy-pasting a multi-line file into a single-line env var field).
     if "\\n" in content and "\n" not in content:
         content = content.replace("\\n", "\n")
-    cookie_path.write_text(content, encoding="utf-8")
+
+    try:
+        cookie_path.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        print(f"WARNING: could not write cookies file from COOKIES_CONTENT ({exc}); continuing without cookies.")
+        return settings
 
     from dataclasses import replace
 

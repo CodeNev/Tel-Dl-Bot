@@ -122,6 +122,7 @@ ffmpeg.org and add it to PATH, or set `FFMPEG_PATH` to the full binary path.
    PROXY_URL=
    FFMPEG_PATH=ffmpeg
    YTDLP_BINARY=yt-dlp
+   YTDLP_PLAYER_CLIENTS=android,web
    TELEGRAM_API_ID=
    TELEGRAM_API_HASH=
    ```
@@ -212,6 +213,26 @@ Alternatively, if you're running the bot on your own machine (not Railway),
 you can instead set `COOKIE_FILE` to a local file path, or let yt-dlp read
 directly from your browser by editing `YTDLPService` to pass
 `cookiesfrombrowser`.
+
+**Still getting the YouTube bot-check error after adding cookies**
+Cookies alone don't always solve it, since YouTube applies this check
+differently per "player client" (web vs. mobile app vs. TV). This bot
+defaults to `YTDLP_PLAYER_CLIENTS=android,web`, which tries the Android
+client first — that client is far less likely to trigger the check. If it's
+still failing:
+
+- Double-check the cookie file's first line is `# Netscape HTTP Cookie File`
+  (or `# HTTP Cookie File`) — some exporters omit it and yt-dlp then ignores
+  the file silently.
+- Try `YTDLP_PLAYER_CLIENTS=android` (Android only) or add `ios`:
+  `YTDLP_PLAYER_CLIENTS=android,ios,web`.
+- As a last resort, route requests through a **residential** proxy (not a
+  datacenter one) via `PROXY_URL` — this is what actually resolves it when
+  YouTube is blocking Railway's IP range outright, independent of cookies.
+- Keep yt-dlp itself up to date; YouTube and yt-dlp are in a constant
+  back-and-forth, and fixes for this exact message ship in yt-dlp releases
+  regularly (this repo's `requirements.txt` already pins `yt-dlp>=...` so
+  redeploying picks up the newest release).
 
 **Downloads fail with a merging/ffmpeg error**
 Confirm you deployed using the provided `Dockerfile` (it installs FFmpeg). If
